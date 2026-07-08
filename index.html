@@ -14,7 +14,7 @@
       <div class="brand-logo">NP</div>
       <div>
         <h1>Nivel Padel Club</h1>
-        <p>Agenda inteligente · Córdoba</p>
+        <p><span id="seccion-actual">Agenda</span> · Sistema interno de reservas</p>
       </div>
     </div>
     <nav class="tabs" role="tablist">
@@ -42,11 +42,11 @@
         <div class="brand-logo">NP</div>
         <div>
           <h1>Nivel Padel Club</h1>
-          <p>Agenda inteligente · Córdoba</p>
+          <p>Sistema interno de gestión de reservas</p>
         </div>
       </div>
       <h2>Iniciar sesión</h2>
-      <p class="login-sub">Acceso interno para el personal del club</p>
+      <p class="login-sub">Agenda, pagos, disponibilidad y mensajes en un solo lugar.</p>
       <form id="form-login" novalidate>
         <div class="form-error" id="login-error" hidden></div>
         <label class="campo">
@@ -63,6 +63,11 @@
         <strong>Credenciales de prueba</strong>
         <span><code>admin</code> / <code>admin123</code> — Administrador</span>
         <span><code>recepcion</code> / <code>recepcion123</code> — Recepcionista</span>
+      </div>
+      <div class="login-proof">
+        <span>Supabase</span>
+        <span>Roles</span>
+        <span>OpenAI/fallback</span>
       </div>
       <p class="login-modo" id="login-modo"></p>
     </div>
@@ -260,6 +265,7 @@
         <button class="btn btn-ghost btn-icon" data-cerrar-modal="modal-copiloto">✕</button>
       </div>
       <p class="modal-kicker">Asistente inteligente para recepción</p>
+      <p class="copiloto-intro">El copiloto genera un mensaje listo para enviar por WhatsApp usando los datos del turno.</p>
       <p class="modal-sub" id="copiloto-detalle"></p>
       <p class="phone-preview" id="copiloto-telefono"></p>
       <div class="copiloto-tipos" id="copiloto-tipos"></div>
@@ -275,6 +281,21 @@
       <div class="modal-foot">
         <button class="btn btn-ghost" id="btn-copiar-mensaje">📋 Copiar mensaje</button>
         <button class="btn btn-wsp" id="btn-abrir-whatsapp">💬 Abrir WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL CONFIRMACIÓN ===================== -->
+  <div class="modal-backdrop" id="modal-confirmacion" hidden>
+    <div class="modal modal-sm modal-confirm" role="dialog" aria-modal="true" aria-labelledby="confirmacion-titulo">
+      <div class="modal-head">
+        <h2 id="confirmacion-titulo">Confirmar acción</h2>
+        <button class="btn btn-ghost btn-icon" id="btn-confirmacion-cerrar" type="button">✕</button>
+      </div>
+      <p class="modal-sub" id="confirmacion-mensaje"></p>
+      <div class="modal-foot">
+        <button type="button" class="btn btn-ghost" id="btn-confirmacion-cancelar">Volver</button>
+        <button type="button" class="btn btn-danger" id="btn-confirmacion-aceptar">Confirmar</button>
       </div>
     </div>
   </div>

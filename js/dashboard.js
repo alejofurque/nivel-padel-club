@@ -62,15 +62,27 @@ const Dashboard = {
 
     // ---- Render ----
     document.getElementById('dash-contenido').innerHTML = `
-      <div class="cards">
-        ${Dashboard.kpi('Reservas activas (semana)', activasSemana.length, `${semana.length} totales`)}
-        ${Dashboard.kpi('Ocupación del día', Utils.porcentaje(ocupacionDia), `${activasDia.length} de ${CAPACIDAD_DIARIA} turnos`)}
-        ${Dashboard.kpi('Ocupación semanal', Utils.porcentaje(ocupacionSemana), `${activasSemana.length} de ${CAPACIDAD_SEMANAL} turnos`)}
-        ${Dashboard.kpi('Ingresos del día', Utils.moneda(suma(activasDia)), 'proyectados para la fecha elegida', true)}
-        ${Dashboard.kpi('Ingresos proyectados', Utils.moneda(ingresosProyectados), 'reservas activas de la semana', true)}
-        ${Dashboard.kpi('Ingresos reales', Utils.moneda(ingresosReales), 'finalizadas, pagadas o con seña', true)}
-        ${Dashboard.kpi('Cancelaciones', cancelacionesSemana, 'semana de referencia')}
-        ${Dashboard.kpi('No asistencias', noAsistenciasSemana, 'alerta para seguimiento')}
+      <div class="panel dash-hero">
+        <div>
+          <span class="panel-eyebrow">Panel administrador</span>
+          <h3>Resumen ejecutivo · ${Utils.fechaLegible(fecha)}</h3>
+          <p>Ocupación, ingresos y alertas críticas de la semana seleccionada.</p>
+        </div>
+        <div class="dash-hero-metric">
+          <span>Ocupación semanal</span>
+          <strong>${Utils.porcentaje(ocupacionSemana)}</strong>
+        </div>
+      </div>
+
+      <div class="cards cards-dashboard">
+        ${Dashboard.kpi('Reservas activas', activasSemana.length, `${semana.length} totales en la semana`, 'verde')}
+        ${Dashboard.kpi('Ocupación del día', Utils.porcentaje(ocupacionDia), `${activasDia.length} de ${CAPACIDAD_DIARIA} turnos`, 'azul')}
+        ${Dashboard.kpi('Ocupación semanal', Utils.porcentaje(ocupacionSemana), `${activasSemana.length} de ${CAPACIDAD_SEMANAL} turnos`, 'azul')}
+        ${Dashboard.kpi('Ingresos del día', Utils.moneda(suma(activasDia)), 'proyectados para la fecha elegida', 'verde', true)}
+        ${Dashboard.kpi('Ingresos proyectados', Utils.moneda(ingresosProyectados), 'reservas activas de la semana', 'verde', true)}
+        ${Dashboard.kpi('Ingresos reales', Utils.moneda(ingresosReales), 'finalizadas, pagadas o con seña', 'verde', true)}
+        ${Dashboard.kpi('Cancelaciones', cancelacionesSemana, 'semana de referencia', cancelacionesSemana ? 'naranja' : 'gris')}
+        ${Dashboard.kpi('No asistencias', noAsistenciasSemana, 'alerta para seguimiento', noAsistenciasSemana ? 'naranja' : 'gris')}
       </div>
 
       <div class="panel">
@@ -134,8 +146,8 @@ const Dashboard = {
       </div>`;
   },
 
-  kpi(label, valor, sub, chico = false) {
-    return `<div class="card">
+  kpi(label, valor, sub, tono = '', chico = false) {
+    return `<div class="card card-dashboard ${tono ? 'card-' + tono : ''}">
       <span class="card-label">${label}</span>
       <span class="card-valor ${chico ? 'card-valor-sm' : ''}">${valor}</span>
       <span class="card-sub">${sub}</span>

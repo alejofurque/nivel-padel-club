@@ -165,24 +165,50 @@ El seed demo incluye mas de 20 reservas distribuidas en la semana actual, estado
 - En Supabase no se auto-siembra para evitar duplicados.
 - El Administrador puede usar `Demo` para resetear y cargar reservas demo.
 
-## Guion De Demo
+## Guion de demo recomendado
 
 1. Ejecutar `npm start`.
 2. Entrar con `admin` / `admin123`.
-3. Ver Agenda, filtros, canchas 1-6 / 7-12 y vista lista.
-4. Entrar al Dashboard y mostrar ingresos, ocupacion, rankings y alertas.
-5. Crear una reserva nueva desde un slot libre.
-6. Intentar crear otra reserva activa en el mismo dia, hora y cancha.
-7. Ver el bloqueo anti-duplicado con el mensaje obligatorio.
-8. Editar la reserva y guardar sin que se detecte contra si misma.
-9. Cancelar la reserva y crear otra en el mismo slot.
-10. Abrir Copiloto WhatsApp, generar mensaje, copiarlo y abrir `wa.me`.
-11. Quitar `OPENAI_API_KEY` y reiniciar para mostrar fallback local.
-12. Exportar CSV.
-13. Cerrar sesion.
-14. Entrar con `recepcion` / `recepcion123`.
-15. Confirmar que puede operar agenda y WhatsApp, pero no Dashboard.
-16. Verificar que los cambios persisten en Supabase al recargar.
+3. Mostrar Agenda: fecha, canchas 1-6 / 7-12, filtros, leyenda y slots libres/ocupados.
+4. Crear una reserva desde un slot libre para demostrar carga prellenada.
+5. Intentar crear otra reserva activa en el mismo dia, hora y cancha.
+6. Mostrar el bloqueo anti-duplicado con el mensaje obligatorio.
+7. Editar la reserva y guardar sin que se detecte contra si misma.
+8. Abrir Copiloto WhatsApp, generar mensaje con OpenAI o fallback, copiarlo y abrir `wa.me`.
+9. Ver Dashboard como Administrador: ocupacion, ingresos, rankings y alertas.
+10. Exportar CSV.
+11. Cerrar sesion.
+12. Entrar con `recepcion` / `recepcion123`.
+13. Mostrar Agenda operativa y Copiloto WhatsApp.
+14. Confirmar que Dashboard no esta disponible para recepcion.
+15. Recargar la app y mostrar que los datos persisten en Supabase.
+
+## Capturas sugeridas para la entrega
+
+- Login con credenciales demo visibles.
+- Agenda en grilla con reservas y leyenda de estados.
+- Formulario de nueva reserva con resumen del turno.
+- Error anti-duplicado.
+- Copiloto WhatsApp con preview generado.
+- Dashboard administrador con resumen ejecutivo.
+- Vista de recepcionista sin Dashboard.
+
+## Checklist de requisitos cumplidos
+
+- Login con `admin/admin123` y `recepcion/recepcion123`.
+- Roles Administrador y Recepcionista.
+- Dashboard visible solo para Administrador.
+- Supabase como persistencia principal cuando esta configurado.
+- Fallback local documentado para demo sin nube.
+- OpenAI en backend con `OPENAI_API_KEY` protegida.
+- Fallback local de IA si falta la API key o falla la llamada.
+- Agenda con 12 canchas y bloques de 90 minutos.
+- Alta, edicion, cancelacion y estados de reserva.
+- Validacion anti-duplicados centralizada en `js/validation.js`.
+- Reservas canceladas liberan disponibilidad.
+- Copia y apertura de WhatsApp con `wa.me`.
+- Exportacion CSV.
+- Responsive para escritorio y mobile.
 
 ## Limitaciones
 

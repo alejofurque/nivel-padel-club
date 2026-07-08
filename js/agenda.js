@@ -191,6 +191,7 @@ const Agenda = {
       return;
     }
 
+    const puedeVerMonto = typeof Auth === 'undefined' || Auth.esAdmin();
     const filas = filtradas.map(r => {
       const badgeReinc = Validation.esReincidente(r.telefono, reincidentes)
         ? ` <span class="badge badge-naranja" title="${MSG_REINCIDENCIA}">⚠ reincidente</span>` : '';
@@ -200,7 +201,7 @@ const Agenda = {
         <td data-label="Cliente"><strong>${Utils.escapeHTML(r.cliente)}</strong>${badgeReinc}<span class="celda-sub">${Utils.escapeHTML(r.telefono)}</span></td>
         <td data-label="Estado"><span class="badge badge-${ESTADOS[r.estado].color}">${ESTADOS[r.estado].label}</span></td>
         <td data-label="Pago"><span class="badge badge-${PAGOS[r.pago].color}">${PAGOS[r.pago].label}</span><span class="celda-sub">${Utils.escapeHTML(r.medioPago || '')}</span></td>
-        <td data-label="Monto" class="celda-monto">${Utils.moneda(r.monto)}</td>
+        ${puedeVerMonto ? `<td data-label="Monto" class="celda-monto">${Utils.moneda(r.monto)}</td>` : ''}
         <td data-label="Obs." class="celda-obs">${Utils.escapeHTML(r.obs || 'Sin observaciones')}</td>
         <td data-label="Acciones" class="celda-acciones">${Agenda.botonesAccion(r)}</td>
       </tr>`;
@@ -210,7 +211,7 @@ const Agenda = {
       <div class="scroll-x"><table class="tabla">
         <thead><tr>
           <th>Hora</th><th>Cancha</th><th>Cliente</th><th>Estado</th>
-          <th>Pago</th><th>Monto</th><th>Obs.</th><th>Acciones</th>
+          <th>Pago</th>${puedeVerMonto ? '<th>Monto</th>' : ''}<th>Obs.</th><th>Acciones</th>
         </tr></thead>
         <tbody>${filas}</tbody>
       </table></div>`;
@@ -223,15 +224,15 @@ const Agenda = {
 
     if (r.estado === 'pendiente') b.push(btn('confirmar', '✓ Confirmar', 'Marcar como confirmada', 'btn-verde'));
     if (r.estado === 'confirmada' || r.estado === 'pendiente') {
-      b.push(btn('finalizar', '🏁', 'Marcar como finalizada'));
-      b.push(btn('no_asistio', '🚷', 'Marcar como no asistió'));
+      b.push(btn('finalizar', 'Finalizar', 'Marcar como finalizada'));
+      b.push(btn('no_asistio', 'No asistió', 'Marcar como no asistió'));
     }
-    b.push(btn('pago', '💲', 'Registrar pago o seña'));
-    b.push(btn('mensajes', '💬', 'Copiloto de mensajes de WhatsApp'));
-    b.push(btn('editar', '✎', 'Editar reserva'));
+    b.push(btn('pago', 'Pago', 'Registrar pago o seña'));
+    b.push(btn('mensajes', 'WhatsApp', 'Copiloto de mensajes de WhatsApp'));
+    b.push(btn('editar', 'Editar', 'Editar reserva'));
     if (r.estado !== 'cancelada' && r.estado !== 'finalizada') {
-      b.push(btn('cancelar', '🚫', 'Cancelar reserva'));
+      b.push(btn('cancelar', 'Cancelar', 'Cancelar reserva'));
     }
-    return b.join('');
+    return `<div class="acciones-grupo">${b.join('')}</div>`;
   },
 };

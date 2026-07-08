@@ -17,6 +17,7 @@ const App = {
     copilotoReservaId: null,
     copilotoTipo: null,
     copilotoPeticion: 0,   // token para descartar respuestas de IA obsoletas
+    confirmacionResolver: null,
   },
 
   async init() {
@@ -159,6 +160,7 @@ const App = {
       const esAgenda = tab.dataset.view === 'agenda';
       document.getElementById('view-agenda').hidden = !esAgenda;
       document.getElementById('view-dashboard').hidden = esAgenda;
+      App.actualizarSeccionActual(tab.dataset.view);
       App.render();
     }));
 
@@ -224,7 +226,12 @@ const App = {
       const alcance = Store.modo === 'nube'
         ? 'Esto borra TODAS las reservas de la base compartida (Supabase) y carga las de demostración.'
         : 'Esto borra los datos locales y vuelve a cargar las reservas de demostración.';
-      if (!confirm(`${alcance} ¿Continuar?`)) return;
+      const confirmado = await App.confirmar({
+        titulo: 'Reiniciar datos demo',
+        mensaje: `${alcance} Esta acción no se puede deshacer.`,
+        accion: 'Reiniciar demo',
+      });
+      if (!confirmado) return;
       try {
         const n = await Demo.cargar();
         App.state.fecha = Utils.hoyISO();
@@ -239,14 +246,24 @@ const App = {
     // Sesión
     document.getElementById('form-login').addEventListener('submit', App.manejarLogin);
     document.getElementById('btn-logout').addEventListener('click', App.cerrarSesion);
+    document.getElementById('btn-confirmacion-aceptar').addEventListener('click', () => App.resolverConfirmacion(true));
+    document.getElementById('btn-confirmacion-cancelar').addEventListener('click', () => App.resolverConfirmacion(false));
+    document.getElementById('btn-confirmacion-cerrar').addEventListener('click', () => App.resolverConfirmacion(false));
 
     // Cierre de modales (botones ✕ / Cancelar y click en el fondo)
     document.querySelectorAll('[data-cerrar-modal]').forEach(b =>
       b.addEventListener('click', () => App.cerrarModal(b.dataset.cerrarModal)));
     document.querySelectorAll('.modal-backdrop').forEach(m =>
-      m.addEventListener('mousedown', e => { if (e.target === m) App.cerrarModal(m.id); }));
+      m.addEventListener('mousedown', e => {
+        if (e.target !== m) return;
+        if (m.id === 'modal-confirmacion') App.resolverConfirmacion(false);
+        else App.cerrarModal(m.id);
+      }));
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop:not([hidden])').forEach(m => App.cerrarModal(m.id));
+      if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop:not([hidden])').forEach(m => {
+        if (m.id === 'modal-confirmacion') App.resolverConfirmacion(false);
+        else App.cerrarModal(m.id);
+      });
     });
 
     // Delegación: acciones sobre reservas (lista y grilla)
@@ -295,6 +312,12 @@ const App = {
     document.getElementById('btn-vista-grilla').classList.toggle('active', vista === 'grilla');
     document.getElementById('btn-vista-lista').classList.toggle('active', vista === 'lista');
     App.render();
+  },
+
+  actualizarSeccionActual(view) {
+    const label = view === 'dashboard' ? 'Dashboard' : 'Agenda';
+    const el = document.getElementById('seccion-actual');
+    if (el) el.textContent = label;
   },
 
   // El segmentado de canchas se apaga cuando hay una cancha puntual filtrada
@@ -372,7 +395,11 @@ const App = {
           Utils.toast(`Se registró que ${r.cliente} no asistió.`, 'aviso');
           break;
         case 'cancelar':
-          if (!confirm(`¿Cancelar la reserva de ${r.cliente} (${Utils.fechaCorta(r.fecha)} ${r.hora}, Cancha ${r.cancha})?`)) return;
+          if (!await App.confirmar({
+            titulo: 'Cancelar reserva',
+            mensaje: `¿Cancelar la reserva de ${r.cliente} (${Utils.fechaCorta(r.fecha)} ${r.hora}, Cancha ${r.cancha})? El horario quedará libre para una nueva reserva.`,
+            accion: 'Cancelar reserva',
+          })) return;
           await Store.cambiarEstado(id, 'cancelada');
           Utils.toast(`Reserva de ${r.cliente} cancelada. El horario quedó libre.`, 'aviso');
           break;
@@ -540,6 +567,7 @@ const App = {
     document.getElementById('copiloto-tipos').innerHTML = WhatsApp.TIPOS.map(t => `
       <button class="tipo-msg ${t.id === sugerido ? 'active' : ''}" data-tipo="${t.id}" title="${t.desc}">
         ${t.label}${t.id === sugerido ? ' <span class="sugerido">sugerido</span>' : ''}
+        <small>${t.desc}</small>
       </button>`).join('');
 
     document.getElementById('copiloto-tipos').querySelectorAll('[data-tipo]').forEach(b =>
@@ -636,6 +664,23 @@ const App = {
 
   abrirModal(id) { document.getElementById(id).hidden = false; },
   cerrarModal(id) { document.getElementById(id).hidden = true; },
+
+  confirmar({ titulo = 'Confirmar acción', mensaje, accion = 'Confirmar' }) {
+    document.getElementById('confirmacion-titulo').textContent = titulo;
+    document.getElementById('confirmacion-mensaje').textContent = mensaje;
+    document.getElementById('btn-confirmacion-aceptar').textContent = accion;
+    App.abrirModal('modal-confirmacion');
+    document.getElementById('btn-confirmacion-aceptar').focus();
+    return new Promise(resolve => { App.state.confirmacionResolver = resolve; });
+  },
+
+  resolverConfirmacion(valor) {
+    if (App.state.confirmacionResolver) {
+      App.state.confirmacionResolver(valor);
+      App.state.confirmacionResolver = null;
+    }
+    App.cerrarModal('modal-confirmacion');
+  },
 };
 
 document.addEventListener('DOMContentLoaded', App.init);
