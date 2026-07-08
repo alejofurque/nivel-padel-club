@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nivel Padel Club — Agenda Inteligente</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎾</text></svg>">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo">NP</div>
+      <div>
+        <h1>Nivel Padel Club</h1>
+        <p>Agenda inteligente · Córdoba</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-view="agenda" role="tab">📅 Agenda</button>
+      <button class="tab" data-view="dashboard" role="tab">📊 Dashboard</button>
+    </nav>
+    <div class="topbar-actions">
+      <span class="save-status" title="Las reservas se guardan en este navegador">Guardado local</span>
+      <button class="btn btn-ghost btn-icon" id="btn-tema" title="Cambiar modo claro/oscuro" aria-label="Cambiar modo claro/oscuro">◐</button>
+      <button class="btn btn-primary" id="btn-nueva-reserva">+ Nueva reserva</button>
+      <button class="btn btn-ghost" id="btn-exportar" title="Exportar todas las reservas a CSV">⬇ CSV</button>
+      <button class="btn btn-ghost" id="btn-reset-demo" title="Reiniciar los datos de demostración">↺ Demo</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ===================== VISTA AGENDA ===================== -->
+    <section id="view-agenda" class="view">
+
+      <div class="toolbar">
+        <div class="date-nav">
+          <button class="btn btn-ghost btn-icon" id="btn-dia-prev" title="Día anterior">‹</button>
+          <input type="date" id="filtro-fecha" class="input">
+          <button class="btn btn-ghost btn-icon" id="btn-dia-next" title="Día siguiente">›</button>
+          <button class="btn btn-ghost" id="btn-hoy">Hoy</button>
+          <span class="fecha-legible" id="fecha-legible"></span>
+        </div>
+        <div class="seg-control" role="group" aria-label="Modo de vista">
+          <button class="seg active" id="btn-vista-grilla">Grilla</button>
+          <button class="seg" id="btn-vista-lista">Lista</button>
+        </div>
+      </div>
+
+      <div class="toolbar toolbar-filtros">
+        <div class="seg-control seg-canchas" id="seg-canchas" role="group" aria-label="Canchas visibles en la grilla">
+          <button class="seg active" data-grupo="1-6">Canchas 1–6</button>
+          <button class="seg" data-grupo="7-12">Canchas 7–12</button>
+          <button class="seg" data-grupo="todas" title="Vista completa, recomendada para monitores grandes">Ver todas</button>
+        </div>
+        <div class="filtros">
+          <label class="search-box" aria-label="Buscar por cliente o teléfono">
+            <span>⌕</span>
+            <input type="search" id="filtro-busqueda" class="input" placeholder="Buscar cliente o teléfono">
+          </label>
+          <select id="filtro-cancha" class="input" aria-label="Filtrar por cancha">
+            <option value="">Cancha: todas</option>
+          </select>
+          <select id="filtro-estado" class="input" aria-label="Filtrar por estado">
+            <option value="">Estado: todos</option>
+          </select>
+          <select id="filtro-pago" class="input" aria-label="Filtrar por pago">
+            <option value="">Pago: todos</option>
+          </select>
+          <button class="btn btn-ghost" id="btn-limpiar-filtros">Limpiar</button>
+          <button class="btn btn-ghost" id="btn-copiar-dia" title="Copiar el resumen del día al portapapeles">Copiar día</button>
+        </div>
+      </div>
+
+      <div id="alertas-dia" class="alertas"></div>
+
+      <div class="cards" id="cards-dia"></div>
+      <div class="legend" aria-label="Referencias de la agenda">
+        <span><i class="dot dot-libre"></i>Libre</span>
+        <span><i class="dot dot-pendiente"></i>Pendiente</span>
+        <span><i class="dot dot-confirmada"></i>Confirmada</span>
+        <span><i class="dot dot-finalizada"></i>Finalizada</span>
+        <span><i class="dot dot-no_asistio"></i>No asistió</span>
+      </div>
+
+      <div id="agenda-grilla" class="panel scroll-x"></div>
+      <div id="agenda-lista" class="panel" hidden></div>
+    </section>
+
+    <!-- ===================== VISTA DASHBOARD ===================== -->
+    <section id="view-dashboard" class="view" hidden>
+      <div class="toolbar">
+        <div class="date-nav">
+          <span class="toolbar-label">Semana de referencia:</span>
+          <input type="date" id="dash-fecha" class="input">
+          <span class="fecha-legible" id="dash-rango-semana"></span>
+        </div>
+      </div>
+      <div id="dash-contenido"></div>
+    </section>
+  </main>
+
+  <!-- ===================== MODAL RESERVA ===================== -->
+  <div class="modal-backdrop" id="modal-reserva" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-reserva-titulo">
+      <div class="modal-head">
+        <h2 id="modal-reserva-titulo">Nueva reserva</h2>
+        <button class="btn btn-ghost btn-icon" data-cerrar-modal="modal-reserva">✕</button>
+      </div>
+      <form id="form-reserva" novalidate>
+        <input type="hidden" id="f-id">
+        <div class="form-error" id="form-reserva-error" hidden></div>
+        <fieldset class="form-section">
+          <legend>Cliente</legend>
+          <div class="form-grid">
+            <label class="campo span-2">
+              <span>Nombre del cliente *</span>
+              <input type="text" id="f-cliente" class="input" required placeholder="Ej: Juan Pérez" autocomplete="name">
+            </label>
+            <label class="campo span-2">
+              <span>Teléfono *</span>
+              <input type="tel" id="f-telefono" class="input" required placeholder="Ej: 351 555 0101" autocomplete="tel">
+            </label>
+          </div>
+        </fieldset>
+        <fieldset class="form-section">
+          <legend>Turno</legend>
+          <div class="form-grid">
+            <label class="campo">
+              <span>Fecha *</span>
+              <input type="date" id="f-fecha" class="input" required>
+            </label>
+            <label class="campo">
+              <span>Hora *</span>
+              <select id="f-hora" class="input" required></select>
+            </label>
+            <label class="campo">
+              <span>Cancha *</span>
+              <select id="f-cancha" class="input" required></select>
+            </label>
+            <label class="campo">
+              <span>Duración (min)</span>
+              <input type="number" id="f-duracion" class="input" value="90" min="30" step="30">
+            </label>
+            <label class="campo span-2">
+              <span>Estado del turno</span>
+              <select id="f-estado" class="input"></select>
+            </label>
+          </div>
+        </fieldset>
+        <fieldset class="form-section">
+          <legend>Pago</legend>
+          <div class="form-grid">
+            <label class="campo">
+              <span>Estado del pago</span>
+              <select id="f-pago" class="input"></select>
+            </label>
+            <label class="campo">
+              <span>Medio de pago</span>
+              <select id="f-medio" class="input"></select>
+            </label>
+            <label class="campo span-2">
+              <span>Monto ($)</span>
+              <input type="number" id="f-monto" class="input" min="0" step="500" placeholder="Ej: 24000">
+            </label>
+          </div>
+        </fieldset>
+        <fieldset class="form-section">
+          <legend>Observaciones</legend>
+          <label class="campo">
+            <span>Notas internas</span>
+            <textarea id="f-obs" class="input" rows="2" placeholder="Ej: cliente fijo de los martes, paga al llegar…"></textarea>
+          </label>
+        </fieldset>
+        <div class="reserva-resumen" id="reserva-resumen" aria-live="polite"></div>
+        <div class="modal-foot">
+          <button type="button" class="btn btn-ghost" data-cerrar-modal="modal-reserva">Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="btn-guardar-reserva">Guardar reserva</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL PAGO ===================== -->
+  <div class="modal-backdrop" id="modal-pago" hidden>
+    <div class="modal modal-sm" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h2>Registrar pago o seña</h2>
+        <button class="btn btn-ghost btn-icon" data-cerrar-modal="modal-pago">✕</button>
+      </div>
+      <form id="form-pago">
+        <input type="hidden" id="p-id">
+        <p class="modal-sub" id="pago-detalle"></p>
+        <div class="form-grid">
+          <label class="campo">
+            <span>Estado del pago</span>
+            <select id="p-pago" class="input"></select>
+          </label>
+          <label class="campo">
+            <span>Medio de pago</span>
+            <select id="p-medio" class="input"></select>
+          </label>
+          <label class="campo span-2">
+            <span>Monto ($)</span>
+            <input type="number" id="p-monto" class="input" min="0" step="500">
+          </label>
+        </div>
+        <div class="modal-foot">
+          <button type="button" class="btn btn-ghost" data-cerrar-modal="modal-pago">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Registrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== MODAL COPILOTO WHATSAPP ===================== -->
+  <div class="modal-backdrop" id="modal-copiloto" hidden>
+    <div class="modal" role="dialog" aria-modal="true">
+      <div class="modal-head">
+        <h2>Copiloto WhatsApp</h2>
+        <button class="btn btn-ghost btn-icon" data-cerrar-modal="modal-copiloto">✕</button>
+      </div>
+      <p class="modal-kicker">Asistente inteligente para recepción</p>
+      <p class="modal-sub" id="copiloto-detalle"></p>
+      <p class="phone-preview" id="copiloto-telefono"></p>
+      <div class="copiloto-tipos" id="copiloto-tipos"></div>
+      <div class="form-error" id="copiloto-error" hidden></div>
+      <textarea id="copiloto-mensaje" class="input" rows="6" aria-label="Mensaje generado"></textarea>
+      <div class="modal-foot">
+        <button class="btn btn-ghost" id="btn-copiar-mensaje">📋 Copiar mensaje</button>
+        <button class="btn btn-wsp" id="btn-abrir-whatsapp">💬 Abrir WhatsApp</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <script src="js/config.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/demo.js"></script>
+  <script src="js/validation.js"></script>
+  <script src="js/whatsapp.js"></script>
+  <script src="js/agenda.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
