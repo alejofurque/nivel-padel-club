@@ -1,72 +1,108 @@
 /* =========================================================
-   Store: persistencia en localStorage + operaciones CRUD
-   Reemplaza al "cuaderno de papel". En una versión futura,
-   este módulo se sustituye por llamadas a una API real sin
-   tocar el resto de la aplicación.
+   Store: fachada de datos con caché en memoria.
+   - Modo "nube": persiste en Supabase (tabla reservations).
+   - Modo "local": persiste en localStorage (fallback académico
+     cuando Supabase no está configurado).
+   Las LECTURAS son síncronas sobre la caché (los renders y la
+   validación anti-duplicados no cambian); las ESCRITURAS son
+   async: primero la base, después la caché.
    ========================================================= */
 
 const Store = {
 
-  _cache: null,
+  _cache: [],
+  modo: 'local', // 'local' | 'nube'
 
-  _leer() {
-    if (Store._cache) return Store._cache;
-    try {
-      const raw = localStorage.getItem(CONFIG.STORAGE_KEY);
-      Store._cache = raw ? JSON.parse(raw) : [];
-    } catch {
-      Store._cache = [];
+  async inicializar() {
+    if (DB.configurado) {
+      Store.modo = 'nube';
+      Store._cache = await DB.listar();
+    } else {
+      Store.modo = 'local';
+      try {
+        const raw = localStorage.getItem(CONFIG.STORAGE_KEY);
+        Store._cache = raw ? JSON.parse(raw) : [];
+      } catch {
+        Store._cache = [];
+      }
     }
+  },
+
+  _guardarLocal() {
+    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(Store._cache));
+  },
+
+  // ---- Lecturas (síncronas, sobre caché) ----
+
+  getAll() {
     return Store._cache;
   },
 
-  _guardar(lista) {
-    Store._cache = lista;
-    localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(lista));
-  },
-
-  getAll() {
-    return Store._leer();
-  },
-
   getById(id) {
-    return Store._leer().find(r => r.id === id) || null;
+    return Store._cache.find(r => r.id === id) || null;
   },
 
   getPorFecha(fecha) {
-    return Store._leer()
+    return Store._cache
       .filter(r => r.fecha === fecha)
       .sort((a, b) => a.hora.localeCompare(b.hora) || a.cancha - b.cancha);
   },
 
   getPorRango(desdeISO, hastaISO) {
-    return Store._leer().filter(r => r.fecha >= desdeISO && r.fecha <= hastaISO);
+    return Store._cache.filter(r => r.fecha >= desdeISO && r.fecha <= hastaISO);
   },
 
-  crear(datos) {
+  // ---- Escrituras (async: primero la base, después la caché) ----
+
+  async crear(datos) {
     const ahora = new Date().toISOString();
-    const reserva = { ...datos, id: Utils.uid(), createdAt: ahora, updatedAt: ahora };
-    const lista = Store._leer();
-    lista.push(reserva);
-    Store._guardar(lista);
-    return reserva;
+    const usuario = Auth.usuario()?.username || 'local';
+    const reserva = { ...datos, creadoPor: usuario, actualizadoPor: usuario, createdAt: ahora, updatedAt: ahora };
+
+    let guardada;
+    if (Store.modo === 'nube') {
+      guardada = await DB.insertar(reserva);
+    } else {
+      guardada = { ...reserva, id: Utils.uid() };
+    }
+    Store._cache.push(guardada);
+    if (Store.modo === 'local') Store._guardarLocal();
+    return guardada;
   },
 
-  actualizar(id, cambios) {
-    const lista = Store._leer();
-    const idx = lista.findIndex(r => r.id === id);
+  async actualizar(id, cambios) {
+    const idx = Store._cache.findIndex(r => r.id === id);
     if (idx === -1) return null;
-    lista[idx] = { ...lista[idx], ...cambios, id, updatedAt: new Date().toISOString() };
-    Store._guardar(lista);
-    return lista[idx];
+
+    const actualizada = {
+      ...Store._cache[idx],
+      ...cambios,
+      id,
+      actualizadoPor: Auth.usuario()?.username || 'local',
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (Store.modo === 'nube') {
+      Store._cache[idx] = await DB.actualizar(id, actualizada);
+    } else {
+      Store._cache[idx] = actualizada;
+      Store._guardarLocal();
+    }
+    return Store._cache[idx];
   },
 
-  cambiarEstado(id, estado) {
+  async cambiarEstado(id, estado) {
     return Store.actualizar(id, { estado });
   },
 
-  reemplazarTodo(lista) {
-    Store._guardar(lista);
+  async reemplazarTodo(lista) {
+    if (Store.modo === 'nube') {
+      await DB.eliminarTodo();
+      Store._cache = lista.length ? await DB.insertarLote(lista) : [];
+    } else {
+      Store._cache = lista;
+      Store._guardarLocal();
+    }
   },
 
   // ---- Exportación a CSV (separador ";" para Excel en español) ----
@@ -87,10 +123,12 @@ const Store = {
       ['observaciones', r => r.obs],
       ['creada', r => r.createdAt],
       ['actualizada', r => r.updatedAt],
+      ['creada_por', r => r.creadoPor || ''],
+      ['actualizada_por', r => r.actualizadoPor || ''],
     ];
     const esc = v => `"${String(v ?? '').replaceAll('"', '""')}"`;
     const filas = [cols.map(c => esc(c[0])).join(';')];
-    const lista = [...Store._leer()].sort((a, b) =>
+    const lista = [...Store._cache].sort((a, b) =>
       a.fecha.localeCompare(b.fecha) || a.hora.localeCompare(b.hora) || a.cancha - b.cancha);
     for (const r of lista) filas.push(cols.map(c => esc(c[1](r))).join(';'));
 

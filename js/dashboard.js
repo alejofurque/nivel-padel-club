@@ -6,6 +6,18 @@
 const Dashboard = {
 
   render(state) {
+    // El dashboard (con métricas financieras) es solo para Administrador.
+    // Si un recepcionista fuerza el acceso, se bloquea con el mensaje requerido.
+    if (typeof Auth !== 'undefined' && !Auth.esAdmin()) {
+      document.getElementById('dash-rango-semana').textContent = '';
+      document.getElementById('dash-contenido').innerHTML = `
+        <div class="panel acceso-denegado">
+          <span class="acceso-denegado-icono">🔒</span>
+          <strong>No tenés permisos para acceder a esta sección.</strong>
+          <span>El dashboard con métricas financieras está disponible solo para el rol Administrador.</span>
+        </div>`;
+      return;
+    }
     const fecha = state.dashFecha;
     const dias = Utils.diasDeSemana(fecha);
     const semana = Store.getPorRango(dias[0], dias[6]);
@@ -54,6 +66,7 @@ const Dashboard = {
         ${Dashboard.kpi('Reservas activas (semana)', activasSemana.length, `${semana.length} totales`)}
         ${Dashboard.kpi('Ocupación del día', Utils.porcentaje(ocupacionDia), `${activasDia.length} de ${CAPACIDAD_DIARIA} turnos`)}
         ${Dashboard.kpi('Ocupación semanal', Utils.porcentaje(ocupacionSemana), `${activasSemana.length} de ${CAPACIDAD_SEMANAL} turnos`)}
+        ${Dashboard.kpi('Ingresos del día', Utils.moneda(suma(activasDia)), 'proyectados para la fecha elegida', true)}
         ${Dashboard.kpi('Ingresos proyectados', Utils.moneda(ingresosProyectados), 'reservas activas de la semana', true)}
         ${Dashboard.kpi('Ingresos reales', Utils.moneda(ingresosReales), 'finalizadas, pagadas o con seña', true)}
         ${Dashboard.kpi('Cancelaciones', cancelacionesSemana, 'semana de referencia')}

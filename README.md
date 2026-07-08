@@ -1,107 +1,203 @@
-# 🎾 Agenda Inteligente Interna — Nivel Padel Club
+# Agenda Inteligente Interna - Nivel Padel Club
 
-Herramienta interna de gestión de reservas para **Nivel Padel Club** (Córdoba, Argentina), pensada para que el personal de recepción reemplace el cuaderno de papel por una agenda digital rápida, clara y sin costo operativo.
+Aplicacion web interna para gestionar reservas de **Nivel Padel Club** con agenda operativa, login por roles, persistencia en Supabase y copiloto de mensajes de WhatsApp con OpenAI o fallback local.
 
----
+## Problema
 
-## 1. Problema detectado
+El club administra 12 canchas en un cuaderno de papel. Eso dificulta ver disponibilidad, aumenta el riesgo de dobles reservas, hace lento el seguimiento de pagos y deja sin metricas claras a la administracion.
 
-El club gestiona las reservas de sus **12 canchas** a mano, en un cuaderno. Eso genera:
+## Solucion
 
-- Demoras para saber qué horarios están libres.
-- Riesgo de **dobles reservas** en la misma cancha y horario.
-- Poco control de señas, pagos y cancelaciones.
-- Cero visibilidad de ocupación, horarios flojos e ingresos.
-- Mensajes de confirmación/recordatorio escritos a mano, uno por uno.
-- Dependencia total de un objeto físico que se puede perder o dañar.
+La app reemplaza el cuaderno por una agenda digital simple para recepcion:
 
-## 2. Solución propuesta
+- Agenda diaria con 12 canchas y bloques de 90 minutos.
+- Alta, edicion, confirmacion, cancelacion y no asistencia.
+- Validacion anti-duplicados centralizada.
+- Reservas canceladas liberan disponibilidad.
+- Dashboard financiero y operativo solo para Administrador.
+- Copiloto WhatsApp con OpenAI y fallback local sin API key.
+- Persistencia principal en Supabase, con modo local solo como fallback de demo.
+- Exportacion CSV para administracion.
 
-Una **aplicación web interna** (agenda + dashboard) que:
+## Stack
 
-- Muestra la **grilla de disponibilidad** del día (10 bloques de 90 min × 12 canchas) de un vistazo: lo libre se ve libre y se reserva con un click.
-- **Bloquea las dobles reservas** con una validación centralizada (regla crítica del negocio).
-- Registra estado del turno, seña/pago, medio de pago y monto.
-- Incluye un **Copiloto de mensajes** que redacta el mensaje de WhatsApp correcto según el estado de la reserva (confirmación, pedido de seña, recordatorio, cancelación) y lo abre en WhatsApp con un click.
-- Ofrece un **dashboard semanal**: ocupación, ingresos proyectados y reales, cancha y día más fuertes, horarios flojos para promocionar, y alertas de clientes reincidentes por no asistencia.
-- Exporta todo a **CSV** y trae **datos demo** listos para presentar.
+- Frontend: HTML, CSS y JavaScript vanilla.
+- Backend minimo: Node.js + Express.
+- Base de datos/Auth: Supabase Free Tier.
+- IA: OpenAI Chat Completions usando `OPENAI_API_KEY` en servidor.
+- Sin framework frontend ni build obligatorio.
 
-## 3. Arquitectura y stack
+## Arquitectura
 
-| Capa | Elección | Por qué |
-|---|---|---|
-| Frontend | HTML + CSS + JavaScript vanilla (sin frameworks, sin build) | Producto terminado y demostrable: se abre con doble click en `index.html`, corre en cualquier máquina del club, cero dependencias, cero costo. |
-| Persistencia | `localStorage` detrás de un módulo `Store` | Los datos sobreviven al cerrar el navegador. El `Store` encapsula todo el acceso: migrar a una API/base de datos real es reemplazar un solo archivo. |
-| Lógica de negocio | Módulos separados (`validation`, `whatsapp`, `dashboard`) | La regla anti-duplicados y las métricas viven en un solo lugar, reutilizables y testeables. |
-| Copiloto IA | Plantillas dinámicas según estado de la reserva | Demuestra el valor del copiloto sin costo de API; el módulo `WhatsApp.generarMensaje()` es el punto exacto donde se enchufaría un LLM real (Claude API) en el futuro. |
-| Estética | Paleta validada por accesibilidad (modo claro y oscuro automático) | Uso por personal no técnico, en recepción, de día y de noche. |
-
-### Estructura de archivos
-
-```
-index.html          Estructura de la app (vistas, modales)
-css/styles.css      Estilos, tema claro/oscuro, responsive
-js/config.js        Reglas del club: canchas, bloques 08:00–23:00, estados, mensajes obligatorios
-js/utils.js         Fechas locales, formato moneda/porcentaje, toasts
-js/store.js         Persistencia (localStorage) + CRUD + exportación CSV
-js/demo.js          ~30 reservas demo realistas, adaptadas a la semana actual
-js/validation.js    ⭐ Validación anti-duplicados centralizada + reincidencia de no asistencia
-js/whatsapp.js      Copiloto de mensajes + normalización de teléfonos + links wa.me
-js/agenda.js        Vista agenda: cards, alertas, grilla de disponibilidad, lista con acciones
-js/dashboard.js     Métricas del día/semana, gráficos de barras, alertas del negocio
-js/app.js           Estado global, navegación, formularios y eventos
+```text
+index.html              Vistas, login y modales
+css/styles.css          UI responsive, modo claro/oscuro, login y copiloto
+js/config.js            Canchas, horarios, estados y mensajes obligatorios
+js/db.js                Cliente Supabase y mapeo tabla reservations
+js/auth.js              Login por usuario/clave y roles
+js/store.js             Fachada de datos: Supabase o fallback local
+js/validation.js        Regla anti-duplicados centralizada
+js/whatsapp.js          Normalizacion de telefonos, wa.me, OpenAI/fallback
+js/agenda.js            Agenda diaria, filtros, grilla/lista y alertas
+js/dashboard.js         Metricas protegidas para Administrador
+js/demo.js              Seed demo semanal
+js/app.js               Estado global, eventos y permisos UI
+server.js               Servidor estatico + endpoints /api
+supabase/schema.sql     SQL idempotente de tablas, indices y RLS
+.env.example            Variables esperadas
 ```
 
-## 4. Cómo ejecutar el proyecto
+## Configuracion
 
-**Opción A (la más simple):** doble click en `index.html`. Funciona directo desde el disco.
-
-**Opción B (servidor local):**
+1. Instalar dependencias:
 
 ```bash
-npx serve .          # o: python -m http.server 8000
+npm install
 ```
 
-y abrir la URL que indique la terminal.
+2. Crear `.env` a partir de `.env.example`:
 
-No requiere instalación, cuentas ni configuración. Los datos demo se cargan solos la primera vez.
+```env
+SUPABASE_URL=
+SUPABASE_ANON_KEY=
+OPENAI_API_KEY=
+OPENAI_MODEL=gpt-4o-mini
+```
 
-## 5. Guion de demo sugerido
+La `SUPABASE_ANON_KEY` puede usarse en frontend porque Supabase la disena para clientes publicos y la seguridad real depende de RLS. `OPENAI_API_KEY` nunca se expone al navegador: solo la lee `server.js`.
 
-1. **Dashboard** → mostrar ocupación semanal, ingresos proyectados vs. reales, horarios flojos y la alerta de reincidencia.
-2. **Agenda** → grilla del día: verde confirmado, amarillo pendiente, huecos "Libre".
-3. Cambiar de fecha con ‹ › o el calendario.
-4. Click en un hueco **Libre** → se abre el formulario con fecha, hora y cancha ya cargadas → guardar.
-5. Intentar crear **otra reserva en la misma fecha, hora y cancha** → el sistema la bloquea con el mensaje: *"No se puede registrar esta reserva porque la cancha ya está ocupada en ese día y horario."*
-6. Editar una reserva (la validación no la detecta contra sí misma).
-7. En la vista **Lista**: confirmar un turno pendiente (✓), registrar seña con 💲.
-8. Abrir 💬 el **Copiloto**: ver el mensaje sugerido según el estado, alternar entre confirmación / seña / recordatorio / cancelación, copiar o abrir WhatsApp.
-9. Cancelar una reserva 🚫 → el horario vuelve a quedar libre en la grilla.
-10. Marcar un turno como **No asistió** 🚷 → si el cliente ya tenía una falta, aparece la alerta de reincidencia.
-11. Exportar todo con **⬇ CSV** (abre directo en Excel).
-12. **↺ Demo** reinicia los datos de demostración en cualquier momento.
+3. Ejecutar:
 
-## 6. Funcionalidades implementadas
+```bash
+npm start
+```
 
-Agenda diaria con grilla y lista · cambio de fecha · filtros por cancha/estado/pago · alta, edición y cancelación de reservas · validación anti-duplicados centralizada · estados de turno (pendiente, confirmada, cancelada, finalizada, no asistió) · estados de pago (sin seña, seña, pagado, pendiente) con medio y monto · copiloto de mensajes con 4 plantillas y sugerencia inteligente · links de WhatsApp con teléfono normalizado y validación (*"Teléfono inválido o incompleto."*) · dashboard diario y semanal con ocupación, ingresos proyectados/reales, cancha y día top, horarios fuertes/flojos · alerta de reincidencia por no asistencia (2+ faltas del mismo teléfono) · exportación CSV · datos demo con carga y reinicio · modo oscuro automático · responsive (PC y celular).
+Abrir [http://localhost:4173](http://localhost:4173).
 
-## 7. Limitaciones del MVP
+> Si se abre `index.html` directo, la app cae a modo local de demo porque no puede leer `/api/config`. Para Supabase y OpenAI reales, usar `npm start`.
 
-- No integra pagos reales (Mercado Pago se registra como medio, no cobra).
-- No usa la API oficial de WhatsApp: abre `wa.me` con el mensaje precargado.
-- Los datos viven en el navegador (`localStorage`): sirven para un puesto de recepción; para varios dispositivos simultáneos hace falta un backend con base de datos.
-- No hay login ni roles: cualquier persona con acceso a la máquina puede operar.
-- El copiloto usa plantillas inteligentes, no un modelo de IA en vivo.
-- Los ingresos "reales" se calculan sobre el monto total de la reserva (una seña se cuenta completa, según la definición del enunciado).
+## Supabase
 
-## 8. Próximas mejoras
+1. Crear un proyecto en Supabase.
+2. Ir a **SQL Editor**.
+3. Ejecutar completo el archivo [supabase/schema.sql](supabase/schema.sql).
+4. Copiar `Project URL` en `SUPABASE_URL`.
+5. Copiar `anon public` en `SUPABASE_ANON_KEY`.
 
-1. Backend liviano (Node/Express o Supabase) con base de datos en la nube y sincronización multiusuario.
-2. Login por roles (recepción / administración).
-3. Turnos fijos semanales automáticos para clientes recurrentes.
-4. Recordatorios automáticos programados vía WhatsApp Business API.
-5. Cobro de señas online con Mercado Pago (link de pago en el mensaje de seña).
-6. Copiloto conectado a la API de Claude para mensajes personalizados por historial del cliente.
-7. Portal público de reservas para clientes.
-8. Gestión de clientes frecuentes con historial y promociones dirigidas a horarios flojos.
-9. Módulo de torneos y clases.
+El SQL crea:
+
+- `public.reservations`.
+- `public.profiles`.
+- constraints de estados validos.
+- indice unico parcial `date + time + court` para reservas no canceladas.
+- trigger de `updated_at`.
+- RLS y politicas basicas.
+
+## Usuarios Demo
+
+Crear en Supabase Auth:
+
+- Email: `admin@nivelpadel.local`, password: `admin123`, auto confirm.
+- Email: `recepcion@nivelpadel.local`, password: `recepcion123`, auto confirm.
+
+La app pide usuario simple:
+
+- `admin` / `admin123` -> Administrador.
+- `recepcion` / `recepcion123` -> Recepcionista.
+
+El trigger de Supabase crea perfiles automaticamente:
+
+- `admin` -> `admin`.
+- `recepcion` -> `recepcionista`.
+
+## Roles
+
+Administrador puede ver agenda, dashboard, metricas financieras, exportar CSV y resetear datos demo.
+
+Recepcionista puede ver agenda, crear, editar, confirmar, cancelar, marcar no asistencia y generar WhatsApp. No ve la pestana Dashboard. Si fuerza el acceso, la app muestra:
+
+> No tenés permisos para acceder a esta sección.
+
+## OpenAI y Fallback
+
+Endpoint principal:
+
+```text
+POST /api/generate-whatsapp-message
+```
+
+El servidor recibe tipo de mensaje y datos de reserva, llama a OpenAI con `OPENAI_MODEL` o `gpt-4o-mini`, y devuelve `{ mensaje }`.
+
+Tipos soportados:
+
+- Confirmacion de reserva.
+- Solicitud de sena o comprobante.
+- Recordatorio.
+- Cancelacion registrada.
+- Mensaje operativo personalizado.
+
+Si `OPENAI_API_KEY` no existe, esta vacia o falla la llamada:
+
+- La app muestra `IA procesando mensaje...`.
+- Espera al menos 1.5 segundos.
+- Genera una plantilla local dinamica con datos reales.
+- Permite copiar y abrir WhatsApp igual.
+
+## Reglas De Negocio
+
+La validacion anti-duplicados vive en [js/validation.js](js/validation.js):
+
+- Bloquea misma fecha + hora + cancha si la reserva existente no esta cancelada.
+- Ignora la propia reserva al editar.
+- Mensaje obligatorio:
+
+```text
+No se puede registrar esta reserva porque la cancha ya está ocupada en ese día y horario.
+```
+
+Supabase refuerza la regla con un indice unico parcial sobre reservas activas. Si dos usuarios intentan guardar al mismo tiempo, la base tambien bloquea el duplicado.
+
+## Datos Demo
+
+El seed demo incluye mas de 20 reservas distribuidas en la semana actual, estados variados, pagos variados y una reincidencia de `No asistio`.
+
+- En modo local se carga automaticamente si no hay reservas.
+- En Supabase no se auto-siembra para evitar duplicados.
+- El Administrador puede usar `Demo` para resetear y cargar reservas demo.
+
+## Guion De Demo
+
+1. Ejecutar `npm start`.
+2. Entrar con `admin` / `admin123`.
+3. Ver Agenda, filtros, canchas 1-6 / 7-12 y vista lista.
+4. Entrar al Dashboard y mostrar ingresos, ocupacion, rankings y alertas.
+5. Crear una reserva nueva desde un slot libre.
+6. Intentar crear otra reserva activa en el mismo dia, hora y cancha.
+7. Ver el bloqueo anti-duplicado con el mensaje obligatorio.
+8. Editar la reserva y guardar sin que se detecte contra si misma.
+9. Cancelar la reserva y crear otra en el mismo slot.
+10. Abrir Copiloto WhatsApp, generar mensaje, copiarlo y abrir `wa.me`.
+11. Quitar `OPENAI_API_KEY` y reiniciar para mostrar fallback local.
+12. Exportar CSV.
+13. Cerrar sesion.
+14. Entrar con `recepcion` / `recepcion123`.
+15. Confirmar que puede operar agenda y WhatsApp, pero no Dashboard.
+16. Verificar que los cambios persisten en Supabase al recargar.
+
+## Limitaciones
+
+- No hay pagos reales ni integracion Mercado Pago.
+- WhatsApp usa `wa.me`; no usa WhatsApp Business API.
+- La `SERVICE_ROLE_KEY` no se usa ni debe cargarse en frontend.
+- El fallback local existe para demo academica sin presupuesto de IA.
+- Supabase con CDN requiere conexion a internet; sin servidor o sin config la app usa modo local.
+
+## Futuras Mejoras
+
+- Edge Function para mover mas reglas al servidor.
+- Auditoria detallada por usuario.
+- Turnos fijos recurrentes.
+- Recordatorios automaticos con WhatsApp Business API.
+- Portal publico de reservas.
+- Links de pago reales.
+- Reportes descargables por periodo.

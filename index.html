@@ -22,13 +22,51 @@
       <button class="tab" data-view="dashboard" role="tab">📊 Dashboard</button>
     </nav>
     <div class="topbar-actions">
-      <span class="save-status" title="Las reservas se guardan en este navegador">Guardado local</span>
+      <span class="save-status" id="save-status" title="Dónde se guardan las reservas">Guardado local</span>
+      <div class="user-chip" id="user-chip" hidden>
+        <span class="user-chip-nombre" id="user-nombre"></span>
+        <span class="user-chip-rol" id="user-rol"></span>
+      </div>
       <button class="btn btn-ghost btn-icon" id="btn-tema" title="Cambiar modo claro/oscuro" aria-label="Cambiar modo claro/oscuro">◐</button>
       <button class="btn btn-primary" id="btn-nueva-reserva">+ Nueva reserva</button>
       <button class="btn btn-ghost" id="btn-exportar" title="Exportar todas las reservas a CSV">⬇ CSV</button>
       <button class="btn btn-ghost" id="btn-reset-demo" title="Reiniciar los datos de demostración">↺ Demo</button>
+      <button class="btn btn-ghost" id="btn-logout" title="Cerrar sesión">Cerrar sesión</button>
     </div>
   </header>
+
+  <!-- ===================== PANTALLA DE LOGIN ===================== -->
+  <section id="login-screen" hidden>
+    <div class="login-card">
+      <div class="brand login-brand">
+        <div class="brand-logo">NP</div>
+        <div>
+          <h1>Nivel Padel Club</h1>
+          <p>Agenda inteligente · Córdoba</p>
+        </div>
+      </div>
+      <h2>Iniciar sesión</h2>
+      <p class="login-sub">Acceso interno para el personal del club</p>
+      <form id="form-login" novalidate>
+        <div class="form-error" id="login-error" hidden></div>
+        <label class="campo">
+          <span>Usuario</span>
+          <input type="text" id="login-usuario" class="input" autocomplete="username" placeholder="admin o recepcion" required>
+        </label>
+        <label class="campo">
+          <span>Contraseña</span>
+          <input type="password" id="login-clave" class="input" autocomplete="current-password" placeholder="••••••••" required>
+        </label>
+        <button type="submit" class="btn btn-primary login-btn" id="btn-login">Ingresar</button>
+      </form>
+      <div class="login-demo">
+        <strong>Credenciales de prueba</strong>
+        <span><code>admin</code> / <code>admin123</code> — Administrador</span>
+        <span><code>recepcion</code> / <code>recepcion123</code> — Recepcionista</span>
+      </div>
+      <p class="login-modo" id="login-modo"></p>
+    </div>
+  </section>
 
   <main>
     <!-- ===================== VISTA AGENDA ===================== -->
@@ -225,8 +263,15 @@
       <p class="modal-sub" id="copiloto-detalle"></p>
       <p class="phone-preview" id="copiloto-telefono"></p>
       <div class="copiloto-tipos" id="copiloto-tipos"></div>
+      <label class="campo" id="copiloto-instruccion-campo" hidden>
+        <span>¿Qué querés comunicarle al cliente?</span>
+        <input type="text" id="copiloto-instruccion" class="input"
+               placeholder="Ej: la cancha 3 está en mantenimiento, ofrecerle pasar a la 5">
+      </label>
       <div class="form-error" id="copiloto-error" hidden></div>
+      <div class="copiloto-estado" id="copiloto-estado" hidden></div>
       <textarea id="copiloto-mensaje" class="input" rows="6" aria-label="Mensaje generado"></textarea>
+      <p class="copiloto-hint">Podés editar el mensaje antes de enviarlo. Volvé a tocar el tipo de mensaje para regenerarlo.</p>
       <div class="modal-foot">
         <button class="btn btn-ghost" id="btn-copiar-mensaje">📋 Copiar mensaje</button>
         <button class="btn btn-wsp" id="btn-abrir-whatsapp">💬 Abrir WhatsApp</button>
@@ -236,8 +281,13 @@
 
   <div id="toast-container" class="toast-container" aria-live="polite"></div>
 
+  <!-- Supabase JS (UMD). Si el CDN no carga, la app cae a modo local. -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+
   <script src="js/config.js"></script>
   <script src="js/utils.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/auth.js"></script>
   <script src="js/store.js"></script>
   <script src="js/demo.js"></script>
   <script src="js/validation.js"></script>

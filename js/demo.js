@@ -90,7 +90,7 @@ const Demo = (() => {
         // Turnos pasados: mayormente finalizados y cobrados
         estado = 'finalizada';
         pago = i % 4 === 0 ? 'pendiente' : 'pagado';
-        medio = ['Efectivo', 'Mercado Pago', 'Transferencia'][i % 3];
+        medio = ['Efectivo', 'Mercado Pago', 'Transferencia', 'Tarjeta'][i % 4];
       } else if (fecha === hoy) {
         // Turnos de hoy: mezcla para que la agenda del día tenga de todo
         estado = i % 3 === 0 ? 'pendiente' : 'confirmada';
@@ -123,14 +123,16 @@ const Demo = (() => {
     });
   }
 
-  function cargar() {
+  async function cargar() {
     const reservas = generarReservas();
-    Store.reemplazarTodo(reservas);
+    await Store.reemplazarTodo(reservas);
     return reservas.length;
   }
 
-  function cargarSiVacio() {
-    if (Store.getAll().length === 0) cargar();
+  async function cargarSiVacio() {
+    // Solo se auto-siembra en modo local. En la nube los datos son
+    // compartidos: el seed lo dispara el admin con el botón "↺ Demo".
+    if (Store.modo === 'local' && Store.getAll().length === 0) await cargar();
   }
 
   return { cargar, cargarSiVacio };

@@ -50,10 +50,11 @@ const WhatsApp = {
   // ---- Plantillas del copiloto ----
 
   TIPOS: [
-    { id: 'confirmacion', label: '✅ Confirmación', desc: 'Confirmar el turno al cliente' },
-    { id: 'sena',         label: '💵 Pedir seña',   desc: 'Solicitar seña o comprobante' },
-    { id: 'recordatorio', label: '⏰ Recordatorio', desc: 'Recordar el turno de hoy' },
-    { id: 'cancelacion',  label: '🚫 Cancelación',  desc: 'Confirmar cancelación registrada' },
+    { id: 'confirmacion',  label: '✅ Confirmación',  desc: 'Confirmar el turno al cliente' },
+    { id: 'sena',          label: '💵 Pedir seña',    desc: 'Solicitar seña o comprobante' },
+    { id: 'recordatorio',  label: '⏰ Recordatorio',  desc: 'Recordar el turno de hoy' },
+    { id: 'cancelacion',   label: '🚫 Cancelación',   desc: 'Confirmar cancelación registrada' },
+    { id: 'personalizado', label: '✍️ Personalizado', desc: 'Mensaje operativo a medida: contale a la IA qué querés comunicar' },
   ],
 
   /**
@@ -67,7 +68,42 @@ const WhatsApp = {
     return 'confirmacion';
   },
 
-  generarMensaje(tipo, reserva) {
+  /**
+   * Genera el mensaje con IA real (OpenAI) a través del backend.
+   * La API key nunca está en el frontend: el navegador solo llama
+   * a /api/generate-whatsapp-message y el servidor habla con OpenAI.
+   * Lanza error si la IA no está configurada o falla → el llamador
+   * usa el fallback local (generarMensaje).
+   */
+  async generarConIA(tipo, reserva, instruccion = '') {
+    const resp = await fetch('/api/generate-whatsapp-message', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        tipo,
+        instruccion,
+        reserva: {
+          cliente: reserva.cliente,
+          telefono: reserva.telefono,
+          fecha: reserva.fecha,
+          fechaLegible: Utils.fechaLegible(reserva.fecha),
+          hora: reserva.hora,
+          cancha: reserva.cancha,
+          estado: ESTADOS[reserva.estado]?.label || reserva.estado,
+          pago: PAGOS[reserva.pago]?.label || reserva.pago,
+          medioPago: reserva.medioPago,
+          monto: reserva.monto,
+          obs: reserva.obs,
+        },
+      }),
+    });
+    if (!resp.ok) throw new Error('ia_no_disponible');
+    const data = await resp.json();
+    if (!data.mensaje) throw new Error('ia_respuesta_vacia');
+    return data.mensaje.trim();
+  },
+
+  generarMensaje(tipo, reserva, instruccion = '') {
     const nombre = (reserva.cliente || '').trim().split(/\s+/)[0] || 'cliente';
     const fecha = Utils.fechaLegible(reserva.fecha).toLowerCase();
     const hora = reserva.hora;
@@ -83,6 +119,8 @@ const WhatsApp = {
         return `Hola ${nombre}, te recordamos que hoy tenés turno en ${club} a las ${hora}, en Cancha ${cancha}. Te recomendamos llegar 10 minutos antes. Te esperamos.`;
       case 'cancelacion':
         return `Hola ${nombre}, registramos la cancelación de tu turno en ${club} para el día ${fecha} a las ${hora}. Gracias por avisar.`;
+      case 'personalizado':
+        return `Hola ${nombre}, te escribimos de ${club} por tu turno del día ${fecha} a las ${hora}, en Cancha ${cancha}. ${instruccion ? instruccion.trim() : 'Cualquier consulta, escribinos por acá.'}`;
       default:
         return '';
     }

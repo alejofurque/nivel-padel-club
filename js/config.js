@@ -48,7 +48,7 @@ const PAGOS = {
   pendiente: { label: 'Pendiente de pago', color: 'amarillo' },
 };
 
-const MEDIOS_PAGO = ['No definido', 'Efectivo', 'Transferencia', 'Mercado Pago'];
+const MEDIOS_PAGO = ['No definido', 'Efectivo', 'Transferencia', 'Mercado Pago', 'Tarjeta'];
 
 // Mensajes obligatorios del sistema
 const MSG_DUPLICADO = 'No se puede registrar esta reserva porque la cancha ya está ocupada en ese día y horario.';

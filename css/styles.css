@@ -543,6 +543,203 @@ main { max-width: 1440px; margin: 0 auto; padding: 18px 20px 60px; }
   color: var(--ink);
 }
 
+/* ---------- Caja de alertas colapsable (no empuja la grilla) ---------- */
+
+.alertas-box {
+  background: var(--surface);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-suave);
+}
+.alertas-box-critica { border-color: color-mix(in srgb, var(--rojo) 40%, transparent); }
+
+.alertas-box summary {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 14px;
+  cursor: pointer;
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--ink);
+  user-select: none;
+}
+.alertas-box summary::-webkit-details-marker { display: none; }
+
+.alertas-badge {
+  display: grid;
+  place-items: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--amarillo);
+  color: #402b00;
+  font-size: 12px;
+  font-weight: 800;
+}
+.alertas-box-critica .alertas-badge { background: var(--rojo); color: #fff; }
+
+.alertas-hint { font-size: 12px; font-weight: 600; color: var(--muted); }
+
+.alertas-chevron {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 12px;
+  transition: transform 0.18s ease;
+}
+.alertas-box[open] .alertas-chevron { transform: rotate(180deg); }
+
+.alertas-lista { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+.alertas-lista .alerta { margin-bottom: 0; }
+
+/* ---------- Toolbar de filtros y KPIs clickeables ---------- */
+
+.toolbar-filtros { margin-top: -4px; }
+.seg-canchas .seg { padding: 8px 16px; }
+.seg:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.card-kpi { min-height: 92px; }
+.card-click { cursor: pointer; transition: transform 0.16s ease, border-color 0.16s ease; }
+.card-click:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--primario) 45%, transparent);
+}
+.card-naranja .card-valor { color: var(--naranja-texto); }
+.card-verde::after { background: var(--verde); }
+.card-amarillo::after { background: var(--amarillo); }
+.card-naranja::after { background: var(--naranja); }
+.card-gris::after { background: var(--muted); opacity: 0.35; }
+
+.resumen-conflicto {
+  display: block;
+  margin-top: 4px;
+  color: var(--naranja-texto);
+  font-weight: 700;
+}
+
+/* ---------- Pantalla de login ---------- */
+
+#login-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px 16px;
+  background:
+    radial-gradient(1000px 500px at 80% -10%, color-mix(in srgb, var(--primario) 22%, transparent), transparent),
+    var(--plano);
+}
+#login-screen[hidden] { display: none; }
+
+.login-card {
+  width: 100%;
+  max-width: 400px;
+  background: var(--surface);
+  border: 1px solid var(--borde);
+  border-radius: 16px;
+  box-shadow: var(--sombra);
+  padding: 26px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-brand { margin-bottom: 4px; }
+.login-brand h1 { font-size: 18px; color: var(--ink); }
+.login-brand p { font-size: 12px; color: var(--muted); }
+
+.login-card h2 { font-size: 20px; margin-top: 6px; }
+.login-sub { font-size: 13px; color: var(--ink-2); margin-top: -8px; }
+
+#form-login { display: flex; flex-direction: column; gap: 12px; }
+.login-btn { width: 100%; padding: 11px; font-size: 15px; }
+
+.login-demo {
+  border: 1px dashed var(--borde);
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.login-demo strong { color: var(--ink); font-size: 12px; text-transform: uppercase; letter-spacing: 0.4px; }
+.login-demo code {
+  background: color-mix(in srgb, var(--muted) 12%, transparent);
+  border-radius: 4px;
+  padding: 0 5px;
+  font-size: 12px;
+}
+
+.login-modo { font-size: 12px; color: var(--muted); text-align: center; }
+
+/* ---------- Chip de usuario y rol ---------- */
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 5px 12px;
+}
+.user-chip-nombre { font-size: 13px; font-weight: 700; color: #fff; }
+.user-chip-rol {
+  font-size: 10.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  background: var(--acento);
+  color: #14532d;
+  border-radius: 999px;
+  padding: 2px 8px;
+}
+
+/* ---------- Copiloto: estado de generación ---------- */
+
+.copiloto-estado {
+  border-radius: 8px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.copiloto-estado-cargando {
+  background: color-mix(in srgb, var(--azul) 12%, var(--surface));
+  color: var(--azul-texto);
+  animation: pulso-ia 1.2s ease-in-out infinite;
+}
+.copiloto-estado-ia {
+  background: color-mix(in srgb, var(--verde) 12%, var(--surface));
+  color: var(--verde-texto);
+}
+.copiloto-estado-fallback {
+  background: color-mix(in srgb, var(--amarillo) 14%, var(--surface));
+  color: var(--amarillo-texto);
+}
+@keyframes pulso-ia {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.55; }
+}
+
+#copiloto-instruccion-campo { margin-bottom: 10px; }
+.copiloto-hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+
+/* ---------- Acceso denegado (dashboard sin permisos) ---------- */
+
+.acceso-denegado {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 44px 16px;
+  text-align: center;
+}
+.acceso-denegado-icono { font-size: 34px; }
+.acceso-denegado strong { font-size: 16px; }
+.acceso-denegado span:last-child { color: var(--muted); font-size: 13.5px; max-width: 420px; }
+
 /* ---------- Dashboard ---------- */
 
 .dash-grid {
@@ -787,6 +984,13 @@ main { max-width: 1440px; margin: 0 auto; padding: 18px 20px 60px; }
   .span-2 { grid-column: span 1; }
   .copiloto-tipos { grid-template-columns: 1fr; }
   .card-valor { font-size: 24px; }
+
+  /* En pantallas chicas la grilla compacta scrollea dentro de su panel
+     para que los nombres sigan siendo legibles */
+  #agenda-grilla { overflow-x: auto; }
+  .grilla-compacta { min-width: 540px; }
+  .seg-canchas { width: 100%; }
+  .seg-canchas .seg { flex: 1; }
   .modal { padding: 16px; }
   .modal-foot { flex-direction: column-reverse; }
   .modal-foot .btn { width: 100%; }
